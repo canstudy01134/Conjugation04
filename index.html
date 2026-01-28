@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活用英単語 04</title>
+    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --test-color: #62b300;
+            --play-color: #e67e22;
+            --bg-color: #f0f2f5;
+        }
+        body { font-family: 'Klee One', cursive, sans-serif; background-color: var(--bg-color); margin: 0; padding: 10px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        .header { padding: 20px 15px; text-align: center; border-bottom: 2px solid var(--primary-color); background: white; }
+        .main-title { font-size: 1.4rem; margin: 0; color: #333; }
+        .sub-title-badge { display: inline-block; background: var(--primary-color); color: white; padding: 4px 18px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; margin-top: 10px; }
+        
+        .controls { padding: 15px; background: #fafafa; border-bottom: 1px solid #ddd; }
+        .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        
+        button { padding: 10px 15px; border: none; border-radius: 6px; background: var(--primary-color); color: white; cursor: pointer; font-weight: bold; font-family: inherit; }
+        button:disabled { background-color: #ccc; }
+        
+        .interval-selector { display: flex; align-items: center; justify-content: center; gap: 5px; background: #eee; padding: 4px; border-radius: 10px; margin-bottom: 10px; }
+        .interval-selector label { flex: 1; text-align: center; cursor: pointer; padding: 8px 2px; border-radius: 8px; font-size: 0.75rem; }
+        .interval-selector input { display: none; }
+        .interval-selector input:checked + span { background: white; display: block; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--primary-color); font-weight: bold; }
+
+        .test-mode-btn { width: 100%; background: var(--test-color); margin-top: 5px; }
+        .test-mode-btn.active { background: white; color: var(--test-color); border: 2px solid var(--test-color); }
+
+        .play-divider { background: #fff3e0; padding: 10px; text-align: center; border-bottom: 1px solid #ffe0b2; }
+        .play-btn-inline { background: var(--play-color); width: 90%; font-size: 0.9rem; border-radius: 20px; }
+        .play-btn-inline.playing { background: #d35400; outline: 3px solid #ffeb3b; }
+
+        .word-list { display: flex; flex-direction: column; }
+        .word-row { display: flex; align-items: center; padding: 12px 12px; border-bottom: 1px solid #eee; background: white; cursor: pointer; }
+        .word-row.highlight { background-color: #fff9c4 !important; border-left: 5px solid var(--play-color); }
+
+        .num-col { width: 35px; color: #999; font-size: 0.75rem; font-weight: bold; }
+        .en-col { flex: 2; display: flex; flex-direction: column; }
+        .kana-small { font-size: 0.65rem; color: #888; margin-bottom: -1px; }
+        .word-large { font-size: 1.2rem; color: #000; font-weight: bold; line-height: 1.2; }
+        
+        .ja-col { flex: 1.8; font-size: 0.9rem; color: #444; border-left: 2px solid #f0f0f0; padding-left: 12px; font-weight: bold; }
+        .hide-ja .ja-col { visibility: hidden; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="main-title">英単語　2年　頻出単語240</div>
+        <div class="sub-title-badge" id="subTitle">1番 〜 20番</div>
+    </div>
+    
+    <div class="controls">
+        <div class="nav-buttons">
+            <button id="prevBtn" onclick="changePage(-1)">← 前</button>
+            <span id="pageIndicator" style="font-weight: bold;">1 / 12</span>
+            <button id="nextBtn" onclick="changePage(1)">次 →</button>
+        </div>
+
+        <div class="interval-selector">
+            <label><input type="radio" name="interval" value="400"><span>次々に<br>(0.4s)</span></label>
+            <label><input type="radio" name="interval" value="800" checked><span>一つずつ<br>(0.8s)</span></label>
+            <label><input type="radio" name="interval" value="1200"><span>ゆっくり<br>(1.2s)</span></label>
+        </div>
+
+        <button id="testModeBtn" class="test-mode-btn" onclick="toggleTestMode()">日本語を隠す🙈</button>
+    </div>
+
+    <div id="wordList" class="word-list"></div>
+</div>
+
+<script>
+    const wordData = [
+        ["father", "ファーザー", "お父さん"], ["mother", "マザー", "お母さん"], ["sister", "シスター", "姉、妹"], ["brother", "ブラザー", "兄、弟"], ["I", "アイ", "わたしは"],
+        ["you", "ユウ", "あなたは"], ["we", "ウィー", "わたしたちは"], ["he", "ヒー", "彼は"], ["she", "シー", "彼女は"], ["they", "ゼイ", "かれら、それら"],
+        ["my", "マイ", "わたしの"], ["me", "ミー", "わたしを/に"], ["your", "ユアー", "あなたの"], ["you", "ユー", "あなたを/に"], ["his", "ヒズ", "彼の"],
+        ["him", "ヒム", "彼を/に"], ["our", "アワ", "わたしたちの"], ["us", "アス", "わたしたちを/に"], ["their", "ゼアー", "彼らの/それらの"], ["them", "ゼム", "彼らを/に"],
+        ["apple", "アポゥ", "リンゴ"], ["apples", "アポーズ", "リンゴたち"], ["box", "ボックス", "箱"], ["boxes", "ボクスィーズ", "箱たち"], ["country", "カンチュリィ", "国"],
+        ["countries", "カンチュリィズ", "国々"], ["man", "マン", "男性"], ["men", "メン", "男性ら"], ["woman", "ウーマン", "女性"], ["women", "ウォメン", "女性ら"],
+        ["child", "チャイルドゥ", "こども"], ["children", "チルドレン", "こどもたち"], ["leaf", "リーフ", "葉"], ["leaves", "リーブズ", "葉っぱたち"], ["it / he / she", "イットッ / ヒー / シー", "それは / 彼は / 彼女は"],
+        ["they", "ゼイ", "彼らは、それらは"], ["this", "ディス", "これは、この"], ["these", "ズィーズ", "これらは、これらの"], ["that", "ザットッ", "あれは、あの"], ["those", "ゾウズ", "それらは、それらの"],
+        ["library", "ライブラリィ", "図書館"], ["post office", "ポゥストオフィス", "郵便局"], ["hospital", "ホスピタウ", "病院"], ["station", "スティション", "駅"], ["museum", "ミューゼアム", "博物館"],
+        ["park", "パーク", "公園"], ["theater", "スィアタ", "劇場"], ["supermarket", "スゥパァマーケット", "スーパー"], ["restaurant", "レストラント", "レストラン"], ["school", "スクール", "学校"],
+        ["car", "カァ", "車"], ["bus", "バァス", "バス"], ["train", "チュレイン", "電車"], ["taxi", "タァクシィ", "タクシー"], ["bike", "バイク", "自転車"],
+        ["airplane", "エアプレン", "飛行機"], ["subway", "サブウェイ", "地下鉄"], ["on foot", "オンフットッ", "徒歩で"], ["e-mail", "イィメイル", "電子メール"], ["the Internet", "ザ　インタァネットゥ", "インターネット"],
+        ["January", "ジャニュアリー", "1月"], ["February", "フェブアリー", "2月"], ["March", "マーチ", "3月"], ["April", "エイプリル", "4月"], ["May", "メイ", "5月"],
+        ["June", "ジューン", "6月"], ["July", "ジュライ", "7月"], ["August", "オウガスト", "8月"], ["September", "セプテンバー", "9月"], ["October", "オクトーバー", "10月"],
+        ["November", "ノーベンバー", "11月"], ["December", "ディッセンバ", "12月"], ["spring", "スプリング", "春"], ["summer", "サマー", "夏"], ["fall (autumn)", "フォール (オータンム)", "秋"],
+        ["winter", "ウィンター", "冬"], ["fifteen", "フィフティーン", "15"], ["sixteen", "シクスティーン", "16"], ["thirty", "サーティ", "30"], ["forty-five", "フォーティファアイヴ", "45"],
+        ["o'clock", "オクロァック", "時"], ["time", "タインム", "時"], ["minutes", "ミニッツ", "分"], ["seconds", "セカンヅ", "秒"], ["today", "トゥデイ", "今日"],
+        ["morning", "モーニング", "午前"], ["afternoon", "アフタァヌーン", "午後"], ["evening", "イーヴニング", "夕方"], ["night", "ナイトッ", "夜"], ["midnight", "ミッドナイトッ", "夜中"],
+        ["drink", "ドゥリンク", "飲む"], ["eat", "イート", "食べる"], ["enjoy", "エンジョイ", "楽しむ"], ["go", "ゴー", "行く"], ["have", "ハブ", "持っている/いる"],
+        ["help", "ヘルプ", "助ける/手伝う"], ["know", "ノウ", "知っている"], ["live", "リブ", "住む"], ["make", "メイク", "作る"], ["play", "プレイ", "する/演奏する"],
+        ["run", "ラン", "走る"], ["see", "シー", "見える"], ["speak", "スピーク", "話す"], ["study", "スタデイ", "勉強する"], ["swim", "スウィム", "泳ぐ"],
+        ["take", "テイク", "取る/撮る"], ["talk", "トーク", "話す"], ["use", "ユーズ", "使う"], ["watch", "ウォッチ", "見る(TV)"], ["write", "ライト", "書く"],
+        ["read", "リードゥ", "読む"], ["come", "カンム", "来る"], ["give", "ギヴ", "与える"], ["get", "ゲェット", "手に入れる"], ["hear", "ヒア", "聞く"],
+        ["say", "セイ", "言う"], ["buy", "バイ", "買う"], ["think", "スィンク", "考える"], ["want", "ウォント", "欲しい"], ["practice", "プラクティス", "実践"],
+        ["get up", "ゲタップ", "起きる"], ["go to bed", "ゴォトゥベェッド", "寝る"], ["be full of", "ビーフルオヴ", "満腹になる"], ["listen to", "リッスントゥー", "聞く"], ["look at", "ルカット", "見る"],
+        ["look for", "ルックフォー", "探す"], ["go to", "ゴートゥー", "行く"], ["arrive at", "アライブアットッ", "到着する"], ["call back", "コールバック", "掛けなおす"], ["go abroad", "ゴォアブロウドゥ", "海外へ行く"],
+        ["take care of", "テイクケアオブ", "世話をする"], ["take part in", "テイクパートイン", "参加する"], ["try on", "チュライオン", "試着する"], ["get to", "ゲッチュー", "～に着く"], ["come from", "カンムフロンム", "～から来る"],
+        ["get on", "ゲトオン", "乗る"], ["look forward to", "ルックフォオワァドトゥー", "楽しみです"], ["turn on/off", "ターン　オン／オフ", "入れる／消す"], ["have a good time", "ハヴアグッドタイム", "楽しい時間を"], ["go -ing", "ゴー　～イング", "～しにいく"],
+        ["beautiful", "ビューティフル", "美しい"], ["big", "ビッグ", "大きい"], ["busy", "ビジー", "忙しい"], ["difficult", "ディフィカルト", "難しい"], ["early", "アーリー", "早い"],
+        ["easy", "イーズィー", "簡単な"], ["fast", "ファスト", "速い"], ["free", "フリー", "ひまである"], ["happy", "ハピー", "幸せです"], ["hot", "ホット", "暑い"],
+        ["hungry", "ハングリー", "お腹がすく"], ["kind", "カインド", "親切です"], ["new", "ニュー", "新しい"], ["old", "オールド", "古い"], ["sad", "サッド", "悲しい"],
+        ["sick", "スィック", "病気の"], ["slow", "スロウ", "遅い"], ["small", "スモゥル", "小さい"], ["thirsty", "サースティ", "のどがかわく"], ["tired", "タイヤード", "つかれる"],
+        ["interesting", "インタレスティング", "興味深い"], ["excited", "エキサイティッド", "興奮する"], ["popular", "パピュラー", "人気の"], ["crowded", "クロウディッド", "混雑した"], ["famous", "フェイマス", "有名な"],
+        ["glad", "グラッドゥ", "嬉しい"], ["surprised", "サプライズドゥ", "驚いた"], ["angry", "アングリィ", "怒った"], ["sure", "シュアァ", "確信して"], ["sorry", "ソォリィ", "申し訳ない"],
+        ["can", "キャン", "～できる"], ["could", "クッドゥ", "～できた"], ["want to", "ウォントゥー", "したい"], ["need to", "ニードゥー", "する必要がある"], ["will", "ウィル", "～でしょう"],
+        ["have to", "ハフトゥー", "する必要がある"], ["must", "マストッ", "しなければならない"], ["should", "シューッドゥ", "すべき"], ["may", "メイ", "かもしれない"], ["would like to", "ウッドライクトゥー", "したい(丁寧)"],
+        ["what", "ワット", "何"], ["when", "ウェーン", "いつ"], ["who", "フー", "だれ"], ["whose", "フーズ", "だれのもの"], ["where", "ウェアー", "どこ"],
+        ["which", "ウィッチ", "どちら"], ["why", "ホワイ", "なぜ"], ["how", "ハウ", "どうやって"], ["how many", "ハウメニィ", "いくつ"], ["how much", "ハウマッチ", "いくら"],
+        ["Let's", "レッツ", "しましょう"], ["Can I", "キャナイ", "いいですか"], ["May I", "メイアイ", "いいですか(丁寧)"], ["Shall I", "シャルアイ", "しましょうか"], ["Could you", "クッジュウ", "してくれますか"],
+        ["Would you", "ウッジュウ", "してくれますか(丁寧)"], ["Shall we", "シャルウィー", "しませんか"], ["How about", "ハウアバウ", "はどうですか"], ["Would you like", "ウッジュウライク", "はいかがですか"], ["Why don't we", "ワイドントウィ", "しませんか"],
+        ["Of course", "オフコース", "もちろん"], ["Thank you", "サンキュウ", "ありがとう"], ["Sure", "シュァ", "もちろん"], ["What's wrong?", "ワッツワロング", "どうしましたか"], ["Here you are", "ヒヤユーアァ", "はい、どうぞ"],
+        ["Yes, please", "イエスプリィズ", "お願いします"], ["Take care", "テイッケァ", "お大事に"], ["I'll take it", "アイルテイクイッ", "それを頂きます"], ["Just a minute", "ジャスタミニッツ", "ちょっと待って"], ["Well... / Let me see", "ウェル / レトミィスィー", "ええっとね..."],
+        ["by", "バイ", "そばで"], ["on", "オン", "の上に"], ["under", "アンダァ", "の下に"], ["in", "イン", "の中に"], ["with", "ウィズ", "と一緒に/で"],
+        ["from", "フロンム", "から/出身"], ["of", "オヴ", "の"], ["for", "フォー", "のために"], ["about", "アバウト", "について"], ["last", "ラスト", "最後の"],
+        ["a lot of", "アロットオヴ", "たくさん"], ["in the future", "インザフューチャー", "将来は"], ["most of", "モストオヴ", "のほとんど"], ["according to", "アコーディングトゥー", "によると"], ["at first", "アトファースト", "はじめに"],
+        ["at that time", "アッザッタイム", "その時"], ["each other", "イーチアザー", "お互いに"], ["for a long time", "フォーアロングタイム", "長い間"], ["for example", "フォーイグザンポゥ", "例えば"], ["as soon as", "アズスーンアズ", "できるだけ早く"],
+        ["someone", "サムワン", "誰か"], ["these", "ゼィーズ", "これら"], ["those", "ゾーズ", "それら"], ["some", "サム", "いくつか(肯定)"], ["any", "エニィ", "いくつか(疑/否)"],
+        ["each", "イーチ", "それぞれ"], ["both", "ボゥス", "両方"], ["another", "アナザー", "別の"], ["many", "メニィ", "たくさん"], ["a little", "アリトゥル", "少し"]
+    ];
+
+    let currentPage = 0;
+    const pageSize = 20;
+    let isAutoPlaying = false;
+
+    function render() {
+        stopAutoPlay();
+        const list = document.getElementById('wordList');
+        list.innerHTML = '';
+        const start = currentPage * pageSize;
+        const end = Math.min(start + pageSize, wordData.length);
+        const maxPages = Math.ceil(wordData.length / pageSize);
+
+        document.getElementById('subTitle').innerText = `${start + 1}番 〜 ${end}番`;
+        document.getElementById('pageIndicator').innerText = `${currentPage + 1} / ${maxPages}`;
+        document.getElementById('prevBtn').disabled = (currentPage === 0);
+        document.getElementById('nextBtn').disabled = (currentPage === maxPages - 1);
+
+        for (let i = start; i < end; i++) {
+            const indexInPage = i - start;
+            if (indexInPage % 5 === 0) {
+                const div = document.createElement('div');
+                div.className = 'play-divider';
+                div.innerHTML = `<button class="play-btn-inline" id="btn-play-${indexInPage}" onclick="playGroup(${indexInPage}, 5)">▶ ${i+1}-${Math.min(i+5, wordData.length)} 連続再生</button>`;
+                list.appendChild(div);
+            }
+
+            const row = document.createElement('div');
+            row.className = 'word-row';
+            row.id = `row-${indexInPage}`;
+            row.onclick = () => speakWord(wordData[i][0]);
+            
+            row.innerHTML = `
+                <div class="num-col">${i + 1}</div>
+                <div class="en-col">
+                    <span class="kana-small">${wordData[i][1]}</span>
+                    <span class="word-large">${wordData[i][0]}</span>
+                </div>
+                <div class="ja-col">${wordData[i][2]}</div>
+            `;
+            list.appendChild(row);
+        }
+    }
+
+    function changePage(n) {
+        currentPage += n;
+        render();
+        window.scrollTo(0, 0);
+    }
+
+    function toggleTestMode() {
+        document.getElementById('wordList').classList.toggle('hide-ja');
+        const btn = document.getElementById('testModeBtn');
+        btn.classList.toggle('active');
+        btn.innerText = btn.classList.contains('active') ? "日本語を表示👁️" : "日本語を隠す🙈";
+    }
+
+    function speakWord(text, callback) {
+        speechSynthesis.cancel();
+        const cleanText = text.split(/[/(/]/)[0].trim();
+        const msg = new SpeechSynthesisUtterance(cleanText);
+        msg.lang = 'en-US';
+        msg.rate = 1.0;
+        msg.onend = callback;
+        speechSynthesis.speak(msg);
+    }
+
+    async function playGroup(startIndex, count) {
+        if (isAutoPlaying) { stopAutoPlay(); return; }
+        isAutoPlaying = true;
+        const btn = document.getElementById(`btn-play-${startIndex}`);
+        btn.classList.add('playing');
+        btn.innerText = "■ 停止";
+        
+        const startIdx = currentPage * pageSize;
+        const interval = parseInt(document.querySelector('input[name="interval"]:checked').value);
+
+        for (let i = startIndex; i < startIndex + count; i++) {
+            if (!isAutoPlaying || !wordData[startIdx + i]) break;
+            document.querySelectorAll('.word-row').forEach(r => r.classList.remove('highlight'));
+            const currentRow = document.getElementById(`row-${i}`);
+            if (currentRow) currentRow.classList.add('highlight');
+
+            await new Promise(res => {
+                speakWord(wordData[startIdx + i][0], () => {
+                    setTimeout(res, interval);
+                });
+            });
+        }
+        stopAutoPlay();
+    }
+
+    function stopAutoPlay() {
+        isAutoPlaying = false;
+        speechSynthesis.cancel();
+        document.querySelectorAll('.play-btn-inline').forEach((b, idx) => {
+            b.classList.remove('playing');
+            const num = (currentPage * pageSize) + (idx * 5) + 1;
+            b.innerText = `▶ ${num}-${Math.min(num+4, wordData.length)} 連続再生`;
+        });
+        document.querySelectorAll('.word-row').forEach(r => r.classList.remove('highlight'));
+    }
+
+    render();
+</script>
+</body>
+</html>

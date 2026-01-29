@@ -190,7 +190,7 @@
         const cleanText = text.split(/[/(/]/)[0].trim();
         const msg = new SpeechSynthesisUtterance(cleanText);
         msg.lang = 'en-US';
-        msg.rate = 1.0;
+        msg.rate = 0.75; // 読み上げ速度
         msg.onend = callback;
         speechSynthesis.speak(msg);
     }

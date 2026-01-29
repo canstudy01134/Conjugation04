@@ -78,6 +78,7 @@
 </div>
 
 <script>
+    // データ部分は省略せずそのまま保持
     const wordData = [
         ["father", "ファーザー", "お父さん"], ["mother", "マザー", "お母さん"], ["sister", "シスター", "姉、妹"], ["brother", "ブラザー", "兄、弟"], ["I", "アイ", "わたしは"],
         ["you", "ユウ", "あなたは"], ["we", "ウィー", "わたしたちは"], ["he", "ヒー", "彼は"], ["she", "シー", "彼女は"], ["they", "ゼイ", "かれら、それら"],
@@ -133,6 +134,17 @@
     const pageSize = 20;
     let isAutoPlaying = false;
 
+    // --- Silk対策1: 音声オブジェクトを1つに固定 ---
+    const speechMsg = new SpeechSynthesisUtterance();
+    speechMsg.lang = 'en-US';
+    speechMsg.rate = 0.75;
+
+    // --- Silk対策2: 初回クリックでロック解除 ---
+    window.addEventListener('click', function() {
+        const dummy = new SpeechSynthesisUtterance('');
+        speechSynthesis.speak(dummy);
+    }, { once: true });
+
     function render() {
         stopAutoPlay();
         const list = document.getElementById('wordList');
@@ -185,14 +197,19 @@
         btn.innerText = btn.classList.contains('active') ? "日本語を表示👁️" : "日本語を隠す🙈";
     }
 
+    // --- Silk対策3: 遅延再生ロジック ---
     function speakWord(text, callback) {
         speechSynthesis.cancel();
+        
+        // 記号を取り除き最初の単語のみ抽出
         const cleanText = text.split(/[/(/]/)[0].trim();
-        const msg = new SpeechSynthesisUtterance(cleanText);
-        msg.lang = 'en-US';
-        msg.rate = 0.75; // 読み上げ速度
-        msg.onend = callback;
-        speechSynthesis.speak(msg);
+        speechMsg.text = cleanText;
+        speechMsg.onend = null;
+        speechMsg.onend = () => { if(callback) callback(); };
+
+        setTimeout(() => {
+            speechSynthesis.speak(speechMsg);
+        }, 50);
     }
 
     async function playGroup(startIndex, count) {
@@ -209,7 +226,11 @@
             if (!isAutoPlaying || !wordData[startIdx + i]) break;
             document.querySelectorAll('.word-row').forEach(r => r.classList.remove('highlight'));
             const currentRow = document.getElementById(`row-${i}`);
-            if (currentRow) currentRow.classList.add('highlight');
+            if (currentRow) {
+                currentRow.classList.add('highlight');
+                // Silkでの視認性を高めるため、スクロール位置を調整
+                currentRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
 
             await new Promise(res => {
                 speakWord(wordData[startIdx + i][0], () => {
